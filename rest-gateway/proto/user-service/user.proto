@@ -1,0 +1,29 @@
+syntax = "proto3";
+package user;
+option go_package = "github.com/henrystream/movie-streaming/user-service/proto";
+
+service UserService {
+    rpc Register (RegisterRequest) returns (RegisterResponse);
+    rpc Login (LoginRequest) returns (LoginResponse);
+}
+
+message RegisterRequest {
+    string email = 1;
+    string password = 2;
+    string membership_type = 3;
+}
+
+message RegisterResponse {
+    int32 id = 1;
+    string email = 2;
+    string membership_type = 3;
+}
+
+message LoginRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    string token = 1;
+}
