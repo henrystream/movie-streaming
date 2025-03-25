@@ -41,6 +41,12 @@ func (g *RestGateway) RegisterRoutes(r *gin.Engine) {
 	r.GET("/movies", g.ListMovies)
 	r.PUT("/movies/:id", g.UpdateMovie)
 	r.DELETE("/movies/:id", g.DeleteMovie)
+	r.GET("/health", g.Healthcheck)
+
+}
+
+func (g *RestGateway) Healthcheck(c *gin.Context) {
+	c.JSON(200, gin.H{"status": "healthy"})
 }
 
 func (g *RestGateway) RegisterUser(c *gin.Context) {
@@ -146,6 +152,7 @@ func main() {
 	r := gin.Default()
 	gateway := NewRestGateway()
 	gateway.RegisterRoutes(r)
+
 	log.Println("REST API Gateway on :8080")
 	r.Run(":8080")
 }

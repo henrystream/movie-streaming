@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: movie-streaming
+data:
+  POSTGRES_USERS_HOST: "postgres-users"
+  POSTGRES_MOVIES_HOST: "postgres-movies"
+  POSTGRES_PORT: "5432"
+  KAFKA_BROKER: "kafka:9092"
+  ZOOKEEPER_CONNECT: "zookeeper:2181"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  GIN_MODE: "release"

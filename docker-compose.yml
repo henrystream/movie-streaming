@@ -4,10 +4,17 @@ services:
       context: ./user-service
     ports:
       - "8081:8081"
+    environment:
+      - POSTGRES_HOST=postgres-users
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=users
+      - KAFKA_BROKER=kafka:9092
     depends_on:
       kafka:
         condition: service_healthy
-      postgres:
+      postgres-users:
         condition: service_healthy
     networks:
       - app-network
@@ -16,10 +23,19 @@ services:
       context: ./movie-service
     ports:
       - "8082:8082"
+    environment:
+      - POSTGRES_HOST=postgres-movies
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=movies
+      - KAFKA_BROKER=kafka:9092
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       kafka:
         condition: service_healthy
-      postgres:
+      postgres-movies:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -30,28 +46,50 @@ services:
       context: ./rest-gateway
     ports:
       - "8080:8080"
+    environment:
+      - GIN_MODE=release
     depends_on:
       - user-service
       - movie-service
     networks:
       - app-network
-  postgres:
+
+  postgres-users:
     image: postgres:15
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: users
     ports:
-      - "5432:5432"
+      - "5433:5432" # Map to 5433 on host to avoid conflict with postgres-movies
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-users-data:/var/lib/postgresql/data
     networks:
       - app-network
+
+  postgres-movies:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=movies
+    ports:
+      - "5432:5432" # Keep 5432 for movies as primary
+    volumes:
+      - postgres-movies-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     ports:
@@ -65,7 +103,7 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]  # Simpler check: test port availability
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 10
       start_period: 30s
     depends_on:
@@ -102,7 +140,8 @@ services:
       retries: 5
 
 volumes:
-  postgres-data:
+  postgres-users-data:
+  postgres-movies-data:
 
 networks:
   app-network:

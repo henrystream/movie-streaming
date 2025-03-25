@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -32,7 +33,11 @@ type userServer struct {
 
 func initDB() {
 	var err error
-	connStr := "postgres://postgres:password@postgres:5432/movies?sslmode=disable"
+	//connStr := "postgres://postgres:password@postgres:5433/users?sslmode=disable"
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_PASSWORD"),
+		os.Getenv("POSTGRES_HOST"), os.Getenv("POSTGRES_PORT"), os.Getenv("POSTGRES_DB"))
+
 	for i := 0; i < 10; i++ {
 		log.Printf("Attempt %d: Connecting to DB at %s", i+1, connStr)
 		dbPool, err = pgxpool.New(context.Background(), connStr)
@@ -76,13 +81,13 @@ func initDB() {
 
 func initKafka() {
 	kafkaWriter = &kafka.Writer{
-		Addr:     kafka.TCP("kafka:9092"),
+		Addr:     kafka.TCP(os.Getenv("KAFKA_BROKER")),
 		Topic:    "user-events",
 		Balancer: &kafka.LeastBytes{},
 	}
 	for i := 0; i < 10; i++ {
 		log.Printf("Attempt %d: Connecting to Kafka at kafka:9092", i+1)
-		conn, err := kafka.Dial("tcp", "kafka:9092")
+		conn, err := kafka.Dial("tcp", os.Getenv("KAFKA_BROKER"))
 		if err != nil {
 			log.Printf("Attempt %d: Failed to connect to Kafka: %v, retrying in 2s...", i+1, err)
 			time.Sleep(2 * time.Second)

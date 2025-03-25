@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rest-gateway
+  namespace: movie-streaming
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rest-gateway
+  template:
+    metadata:
+      labels:
+        app: rest-gateway
+    spec:
+      containers:
+        - name: rest-gateway
+          image: rest-gateway:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            timeoutSeconds: 5
+            periodSeconds: 10
+          env:
+            - name: GIN_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: GIN_MODE
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rest-gateway
+  namespace: movie-streaming
+spec:
+  selector:
+    app: rest-gateway
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: NodePort
